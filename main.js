@@ -36,8 +36,8 @@ const UFO_WIDTH = 120;
 const UFO_HEIGHT = 80;
 const UFO_SPEED = 1;
 const UFO_HEALTH = 3; // Hits required to destroy UFO
-const UFO_RESPAWN_MIN = 600; // ~10 sec at 60 FPS
-const UFO_RESPAWN_MAX = 900; // ~15 sec at 60 FPS
+const UFO_RESPAWN_MIN = 900; // ~15 sec at 60 FPS
+const UFO_RESPAWN_MAX = 3800; // ~30 sec at 60 FPS // ~15 sec at 60 FPS
 
 // Barriers
 const BARRIER_WIDTH = 120;
@@ -112,6 +112,11 @@ ws.onmessage = (event) => {
             addChatMessage(data.message);
         } else if (data.type === 'chat_history') {
             data.messages.forEach(msg => addChatMessage(msg));
+        } else if (data.type === 'online_count') {
+            const onlinePlayers = document.getElementById('onlinePlayers');
+            if (onlinePlayers) {
+                onlinePlayers.textContent = `Online: ${data.count}`;
+            }
         } else if (data.type === 'error') {
             document.getElementById('chatError').textContent = data.message;
             setTimeout(() => {

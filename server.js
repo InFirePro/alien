@@ -150,6 +150,13 @@ wss.on('connection', (ws, req) => {
     console.log(`Client connected: ${clientId}`);
     clients.set(clientId, { ws, lastMessageTime: 0 });
 
+    // Send the current online count to all clients
+    wss.clients.forEach(clientWs => {
+        if (clientWs.readyState === WebSocket.OPEN) {
+            clientWs.send(JSON.stringify({ type: 'online_count', count: wss.clients.size }));
+        }
+    });
+
     // Send chat history (last 50 messages)
     db.all(`SELECT name, message, timestamp FROM chat_messages ORDER BY timestamp DESC LIMIT 50`, [], (err, rows) => {
         if (err) {
@@ -204,8 +211,15 @@ wss.on('connection', (ws, req) => {
     ws.on('close', () => {
         console.log(`Client disconnected: ${clientId}`);
         clients.delete(clientId);
+        // Send the updated online count to all clients when a client disconnects
+        wss.clients.forEach(clientWs => {
+            if (clientWs.readyState === WebSocket.OPEN) {
+                clientWs.send(JSON.stringify({ type: 'online_count', count: wss.clients.size }));
+            }
+        });
     });
 });
+
 
 server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
