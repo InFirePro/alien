@@ -1,0 +1,260 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: #000;
+    color: #fff;
+    font-family: 'Press Start 2P', cursive;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px;
+}
+
+.container {
+    max-width: 2500px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 3fr 1fr;
+    gap: 15px;
+}
+
+header {
+    grid-column: 1 / -1;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+h1 {
+    font-size: 2.2rem;
+    color: #ff2d55;
+    text-shadow: 2px 2px 0 #00ff00;
+    letter-spacing: 2px;
+}
+
+.subtitle {
+    font-size: 0.9rem;
+    color: #00ff00;
+    margin-top: 5px;
+}
+
+#nicknameInput, #chatInput {
+    background: #111;
+    color: #fff;
+    border: 2px solid #00ff00;
+    padding: 5px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.7rem;
+    margin: 10px 5px;
+}
+
+button {
+    background: #ff2d55;
+    color: #fff;
+    border: 2px solid #00ff00;
+    padding: 5px 10px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.7rem;
+    cursor: pointer;
+    margin: 5px;
+}
+
+button:hover {
+    background: #00ff00;
+    color: #111;
+}
+
+.left-sidebar, .right-sidebar {
+    background: #111;
+    padding: 15px;
+    border: 2px solid #00ff00;
+    box-shadow: 0 0 10px #00ff00;
+    height: fit-content;
+    min-width: 200px;
+}
+
+.sidebar-subcontainer {
+    background: #111;
+    padding: 10px;
+    border: 2px solid #00ff00;
+    box-shadow: 0 0 8px #00ff00 inset;
+    margin-top: 15px;
+    border-radius: 5px;
+}
+
+.game-section {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.game-window {
+    border: 3px solid #ff2d55;
+    box-shadow: 0 0 15px #ff2d55;
+    background: #000;
+}
+
+#gameCanvas {
+    display: block;
+    background: #000;
+    width: 1000px;
+    height: 800px;
+}
+
+.sidebar-section {
+    margin-bottom: 15px;
+}
+
+.sidebar-section h3 {
+    font-size: 0.9rem;
+    color: #ff2d55;
+    text-shadow: 1px 1px 0 #00ff00;
+    margin-bottom: 10px;
+}
+
+.sidebar-section ul {
+    list-style: none;
+}
+
+.sidebar-section li {
+    font-size: 0.7rem;
+    margin-bottom: 8px;
+}
+
+.sidebar-section p {
+    font-size: 0.7rem;
+    margin-bottom: 10px;
+    line-height: 1.3;
+}
+
+.links li a {
+    color: #00ff00;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.links li a:hover {
+    color: #ff2d55;
+}
+
+#chatMessages {
+    max-height: 200px;
+    overflow-y: auto;
+    background: #222;
+    padding: 10px;
+    border: 2px solid #00ff00;
+    border-radius: 5px;
+    list-style: none;
+}
+
+#chatMessages li {
+    font-size: 0.65rem;
+    margin-bottom: 5px;
+    word-wrap: break-word;
+}
+
+#playerRank {
+    font-size: 0.7rem;
+    color: #00ff00;
+    margin-bottom: 10px;
+}
+
+#chatError {
+    font-size: 0.65rem;
+    color: #ff2d55;
+    margin: 5px 0;
+    min-height: 1em;
+}
+
+@media (max-width: 1024px) {
+    .container {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .left-sidebar, .right-sidebar {
+        order: 3;
+    }
+
+    .game-section {
+        order: 2;
+    }
+
+    header {
+        order: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    h1 {
+        font-size: 1.6rem;
+    }
+
+    .subtitle {
+        font-size: 0.7rem;
+    }
+
+    .sidebar-section h3 {
+        font-size: 0.8rem;
+    }
+
+    .sidebar-section li, .sidebar-section p {
+        font-size: 0.6rem;
+    }
+
+    .left-sidebar, .right-sidebar {
+        padding: 10px;
+    }
+
+    .sidebar-subcontainer {
+        padding: 8px;
+    }
+
+    #nicknameInput, #chatInput, button {
+        font-size: 0.6rem;
+        padding: 4px;
+    }
+
+    #chatError {
+        font-size: 0.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.4rem;
+    }
+
+    .subtitle {
+        font-size: 0.6rem;
+    }
+
+    .sidebar-section h3 {
+        font-size: 0.7rem;
+    }
+
+    .sidebar-section li, .sidebar-section p {
+        font-size: 0.55rem;
+    }
+
+    .container {
+        padding: 10px;
+    }
+
+    .sidebar-subcontainer {
+        padding: 6px;
+    }
+
+    #nicknameInput, #chatInput, button {
+        font-size: 0.55rem;
+        padding: 3px;
+    }
+
+    #chatError {
+        font-size: 0.55rem;
+    }
+}

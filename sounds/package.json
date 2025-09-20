@@ -1,0 +1,19 @@
+{
+  "name": "space-alien-invaders",
+  "version": "1.0.0",
+  "description": "Space Alien Invaders game with high score database and real-time chat",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "sqlite3": "^5.0.2",
+    "ws": "^8.5.0",
+    "cors": "^2.8.5",
+    "body-parser": "^1.19.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
