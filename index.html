@@ -3,11 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-
     <title>Space Alien Invaders</title>
+    <link rel="icon" href="data:," />
     <link rel="stylesheet" href="style.css" />
-    <link rel="icon" type="image/x-icon" href="sprites/favicon.ico" />
     <link
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
       rel="stylesheet"
@@ -17,10 +15,20 @@
     <div class="container">
       <header>
         <h1>Space Alien Invaders</h1>
-
-        <p class="subtitle">Вставте номер контракту токенаa</p>
-        
-        <p class="subtitle">A Modern Take on the 1978 Classic</p>
+        <div class="subtitle">A Modern Take on the 1978 Classic</div>
+        <div class="subtitle">
+          CA: *****************************************
+        </div>
+        <div>
+          <input
+            type="text"
+            id="nicknameInput"
+            placeholder="Enter your nickname"
+            maxlength="20"
+          />
+          <button onclick="setNickname()">Set Nickname</button>
+          <button id="soundButton" onclick="toggleSound()">Mute Sound</button>
+        </div>
       </header>
 
       <aside class="left-sidebar">
@@ -33,7 +41,6 @@
             <li>R: Restart (Game Over)</li>
           </ul>
         </div>
-
         <div class="sidebar-section">
           <h3>🎯 Pro Tips</h3>
           <ul>
@@ -43,13 +50,32 @@
             <li>Keep moving to avoid alien shots</li>
           </ul>
         </div>
+        <div class="sidebar-subcontainer">
+          <div class="sidebar-section">
+            <h3>🏆 Leaderboard</h3>
+            <p id="playerRank"></p>
+            <ul id="leaderboard"></ul>
+          </div>
+          <div class="sidebar-section">
+            <h3>💬 Chat</h3>
+            <p id="chatError"></p>
+            <ul id="chatMessages"></ul>
+            <input
+              id="chatInput"
+              type="text"
+              placeholder="Type a message"
+              maxlength="200"
+            />
+            <button onclick="sendChatMessage()">Send</button>
+          </div>
+        </div>
       </aside>
 
-      <main class="game-section">
+      <section class="game-section">
         <div class="game-window">
-          <canvas id="gameCanvas" width="1200" height="1000"></canvas>
+          <canvas id="gameCanvas"></canvas>
         </div>
-      </main>
+      </section>
 
       <aside class="right-sidebar">
         <div class="sidebar-section">
@@ -61,7 +87,6 @@
             <li>Inspired movies like "Pixels"</li>
           </ul>
         </div>
-
         <div class="sidebar-section">
           <h3>🏆 World Records</h3>
           <ul>
@@ -70,7 +95,22 @@
             <li>Most Cabinets Sold: 360,000 units</li>
           </ul>
         </div>
-
+        <div class="sidebar-section">
+          <h3>🔗 Community Links</h3>
+          <ul class="links">
+            <li>
+              <a href="https://pump.fun/" target="_blank">Pump.fun Coin</a>
+            </li>
+            <li>
+              <a href="https://x.com/pumpdotfun" target="_blank">Community X</a>
+            </li>
+            <li>
+              <a href="https://www.twitch.tv/pumpdotfun" target="_blank"
+                >Pump.fun Stream</a
+              >
+            </li>
+          </ul>
+        </div>
         <div class="sidebar-section">
           <h3>📜 History</h3>
           <p>
@@ -84,20 +124,19 @@
             <li>Inspired countless modern games</li>
           </ul>
         </div>
-
         <div class="sidebar-section">
           <h3>📚 Learn More</h3>
           <ul class="links">
             <li>
               <a
-                href="https://www.arcade-museum.com/game_detail.php?game_id=9662"
+                href="https://www.arcade-museum.com/game_detail.php?game_id=9665"
                 target="_blank"
                 >Arcade Museum</a
               >
             </li>
             <li>
               <a
-                href="https://www.youtube.com/watch?v=MU4psw3ccUI"
+                href="https://www.youtube.com/watch?v=2k1k5tMhQms"
                 target="_blank"
                 >Documentary</a
               >
