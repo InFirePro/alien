@@ -20,13 +20,6 @@
           CA: *****************************************
         </div>
         <div>
-          <input
-            type="text"
-            id="nicknameInput"
-            placeholder="Enter your nickname"
-            maxlength="20"
-          />
-          <button onclick="setNickname()">Set Nickname</button>
           <button id="soundButton" onclick="toggleSound()">Mute Sound</button>
         </div>
       </header>
@@ -53,7 +46,6 @@
         <div class="sidebar-subcontainer">
           <div class="sidebar-section">
             <h3>🏆 Leaderboard</h3>
-            <p id="onlinePlayers">Online: 0</p>
             <p id="playerRank"></p>
             <ul id="leaderboard"></ul>
           </div>
@@ -151,7 +143,31 @@
             </li>
           </ul>
         </div>
+        <div class="sidebar-section">
+          <h3>👤 Player Info</h3>
+          <div>
+            <input
+              type="text"
+              id="nicknameInput"
+              placeholder="Enter your nickname"
+              maxlength="20"
+            />
+            <button onclick="setNickname()">Set Nickname</button>
+          </div>
+        </div>
       </aside>
+    </div>
+    <div id="nicknameModal" class="modal">
+      <div class="modal-content">
+        <h2>Enter your nickname</h2>
+        <input
+          type="text"
+          id="modalNicknameInput"
+          placeholder="Nickname"
+          maxlength="20"
+        />
+        <button id="modalSetNicknameBtn">Play</button>
+      </div>
     </div>
     <script src="main.js"></script>
   </body>

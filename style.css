@@ -152,15 +152,14 @@ button:hover {
 }
 
 #chatMessages li {
-    font-size: 0.65rem;
-    margin-bottom: 5px;
-    word-wrap: break-word;
+    font-size: 0.7rem;
+    color: #fff;
+    border-bottom: 1px dashed #333;
+    padding: 5px 0;
 }
 
-#playerRank {
-    font-size: 0.7rem;
-    color: #00ff00;
-    margin-bottom: 10px;
+#chatMessages li:last-child {
+    border-bottom: none;
 }
 
 #chatError {
@@ -216,45 +215,46 @@ button:hover {
 
     #nicknameInput, #chatInput, button {
         font-size: 0.6rem;
-        padding: 4px;
-    }
-
-    #chatError {
-        font-size: 0.6rem;
     }
 }
 
-@media (max-width: 480px) {
-    h1 {
-        font-size: 1.4rem;
-    }
+/* Modal Styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 100; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
+}
 
-    .subtitle {
-        font-size: 0.6rem;
-    }
+.modal-content {
+    background-color: #111;
+    border: 2px solid #00ff00;
+    box-shadow: 0 0 15px #00ff00;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    width: 80%; /* Could be more or less, depending on screen size */
+    max-width: 400px;
+    text-align: center;
+}
 
-    .sidebar-section h3 {
-        font-size: 0.7rem;
-    }
+.modal-content h2 {
+    color: #ff2d55;
+    font-size: 1rem;
+    margin-bottom: 20px;
+}
 
-    .sidebar-section li, .sidebar-section p {
-        font-size: 0.55rem;
-    }
+#modalNicknameInput {
+    width: 80%;
+    margin-bottom: 15px;
+    text-align: center;
+}
 
-    .container {
-        padding: 10px;
-    }
-
-    .sidebar-subcontainer {
-        padding: 6px;
-    }
-
-    #nicknameInput, #chatInput, button {
-        font-size: 0.55rem;
-        padding: 3px;
-    }
-
-    #chatError {
-        font-size: 0.55rem;
-    }
+#modalSetNicknameBtn {
+    width: 80%;
 }

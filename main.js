@@ -1,4 +1,3 @@
-
 // Space Alien Invaders - main.js (Improved Version with Cookie Auth, High Score DB, and Real-Time Chat)
 
 const canvas = document.getElementById('gameCanvas');
@@ -92,14 +91,6 @@ function getCookie(name) {
     return null;
 }
 
-// Check for nickname cookie on load, prompt if not present
-let username = getCookie('username');
-if (!username) {
-    username = prompt('Enter your nickname for authorization and high scores:') || 'Anonymous';
-    setCookie('username', username, 30); // Store for 30 days
-    console.log(`Prompted new username: ${username}`);
-}
-
 // WebSocket for real-time chat
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const ws = new WebSocket(`${protocol}//${window.location.host}`);
@@ -163,32 +154,31 @@ function sendChatMessage() {
     chatInput.value = '';
 }
 
-// Function to set nickname from input
-async function setNickname() {
-    const oldUsername = username;
-    const nicknameInput = document.getElementById('nicknameInput');
-    if (!nicknameInput) {
-        console.error('Nickname input element not found');
-        return;
+// Function to set nickname from modal
+const nicknameModal = document.getElementById('nicknameModal');
+const modalNicknameInput = document.getElementById('modalNicknameInput');
+const modalSetNicknameBtn = document.getElementById('modalSetNicknameBtn');
+
+function setNickname() {
+    const newUsername = modalNicknameInput.value.trim() || 'Anonymous';
+    if (newUsername) {
+        username = newUsername;
+        setCookie('username', username, 365);
+        nicknameModal.style.display = 'none';
+        updateLeaderboard();
+        gameLoop();
+    } else {
+        alert('Please enter a nickname.');
     }
-    const newUsername = nicknameInput.value.trim() || 'Anonymous';
-    console.log(`setNickname called: oldUsername=${oldUsername}, newUsername=${newUsername}`);
-    if (newUsername === oldUsername) {
-        console.log('Nickname unchanged, no update needed');
-        nicknameInput.value = '';
-        return;
-    }
-    username = newUsername;
-    setCookie('username', username, 30);
-    nicknameInput.value = '';
-    console.log(`Nickname updated locally: ${username}`);
-    console.log(`Current cookies: ${document.cookie}`);
-    if (oldUsername !== 'Anonymous') {
-        console.log(`Updating nickname in DB: ${oldUsername} -> ${username}`);
-        await updateNicknameInDB(oldUsername, username);
-    }
-    updateLeaderboard();
 }
+
+modalSetNicknameBtn.onclick = setNickname;
+modalNicknameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        setNickname();
+    }
+});
+
 
 // Function to update nickname in DB while keeping score
 async function updateNicknameInDB(oldName, newName) {
@@ -488,13 +478,35 @@ function drawAliens() {
     });
 }
 
+function drawExplosions() {
+    explosions.forEach(exp => {
+        let img = explosionSprites[Math.floor(exp.frame)];
+        if (img.complete && img.naturalWidth > 0) {
+            ctx.drawImage(img, exp.x, exp.y, exp.w, exp.h);
+        } else {
+            // Fallback for missing explosion sprite
+            ctx.fillStyle = '#ff9900';
+            ctx.fillRect(exp.x, exp.y, exp.w, exp.h);
+        }
+    });
+}
+
+function updateExplosions() {
+    for (let i = explosions.length - 1; i >= 0; i--) {
+        explosions[i].frame += 0.5;
+        if (explosions[i].frame >= explosionSprites.length) {
+            explosions.splice(i, 1);
+        }
+    }
+}
+
 function drawUFO() {
     if (ufo.alive) {
-        let img = ufoSprites[ufoAnimFrame % ufoSprites.length];
+        let img = ufoSprites[Math.floor(ufoAnimFrame) % ufoSprites.length];
         if (img.complete && img.naturalWidth > 0) {
             ctx.drawImage(img, ufo.x, ufo.y, ufo.w, ufo.h);
         } else {
-            ctx.fillStyle = '#ff0';
+            ctx.fillStyle = '#ff00ff';
             ctx.fillRect(ufo.x, ufo.y, ufo.w, ufo.h);
             console.log('UFO fallback used');
         }
@@ -502,240 +514,205 @@ function drawUFO() {
 }
 
 function updateUFO() {
-    if (!ufo.alive) {
-        ufoTimer++;
-        if (ufoTimer > ufoRespawnTime) {
-            ufo.x = -ufo.w;
-            ufo.dir = 1;
-            ufo.alive = true;
-            ufo.health = UFO_HEALTH;
-            ufoTimer = 0;
-            ufoRespawnTime = Math.floor(Math.random() * (UFO_RESPAWN_MAX - UFO_RESPAWN_MIN + 1)) + UFO_RESPAWN_MIN;
-            if (isSoundEnabled && canPlayAudio) ufoSound.play().catch(e => console.error('UFO sound play error:', e));
-        }
-    }
     if (ufo.alive) {
         ufo.x += ufo.speed * ufo.dir;
-        if (ufo.x > canvas.width) {
+        if (ufo.x > canvas.width || ufo.x + ufo.w < 0) {
             ufo.alive = false;
             ufoTimer = 0;
-            if (isSoundEnabled && canPlayAudio) ufoSound.pause();
+            ufoSound.pause();
+        }
+    } else {
+        ufoTimer++;
+        if (ufoTimer >= ufoRespawnTime) {
+            ufo.alive = true;
+            ufo.health = UFO_HEALTH;
+            ufo.dir = Math.random() > 0.5 ? 1 : -1;
+            ufo.x = ufo.dir === 1 ? -ufo.w : canvas.width;
+            ufoRespawnTime = Math.floor(Math.random() * (UFO_RESPAWN_MAX - UFO_RESPAWN_MIN + 1)) + UFO_RESPAWN_MIN;
+            ufoTimer = 0;
+            if (isSoundEnabled && canPlayAudio) {
+                ufoSound.play().catch(e => console.error('UFO sound play error:', e));
+            }
         }
     }
-    ufoAnimTimer++;
-    if (ufoAnimTimer > 10) {
-        ufoAnimFrame = (ufoAnimFrame + 1) % ufoSprites.length;
-        ufoAnimTimer = 0;
-    }
 }
 
-function drawExplosions() {
-    explosions.forEach(exp => {
-        let img = explosionSprites[exp.frame % explosionSprites.length];
-        if (img.complete && img.naturalWidth > 0) {
-            ctx.drawImage(img, exp.x, exp.y, ALIEN_WIDTH, ALIEN_HEIGHT);
-        } else {
-            ctx.fillStyle = '#ff0';
-            ctx.fillRect(exp.x, exp.y, ALIEN_WIDTH, ALIEN_HEIGHT);
-            console.log('Explosion fallback used');
-        }
-        exp.frame++;
-        if (exp.frame >= explosionSprites.length) {
-            exp.done = true;
-        }
-    });
-    explosions = explosions.filter(exp => !exp.done);
-}
+function update() {
+    if (paused || gameOver || win) return;
 
-function drawGameOver() {
-    ctx.fillStyle = win ? '#0f0' : '#f00';
-    ctx.font = '64px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(win ? 'YOU WIN!' : 'GAME OVER', canvas.width / 2, canvas.height / 2);
-    ctx.font = '32px Arial';
-    ctx.fillStyle = '#fff';
-    ctx.fillText('Press R to restart', canvas.width / 2, canvas.height / 2 + 60);
-    ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2 + 100);
-    ctx.fillText(`High Score: ${highScore}`, canvas.width / 2, canvas.height / 2 + 140);
-    ctx.fillText(`Level: ${level}`, canvas.width / 2, canvas.height / 2 + 180);
-}
-
-function drawPaused() {
-    ctx.fillStyle = '#fff';
-    ctx.font = '48px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
-    ctx.font = '28px Arial';
-    ctx.fillText('Press P to enable controls and resume', canvas.width / 2, canvas.height / 2 + 50);
-}
-
-function updatePlayer() {
-    player.x += player.dx;
+    // Player movement
+    player.x += player.dx * PLAYER_SPEED;
     if (player.x < 0) player.x = 0;
     if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
-}
 
-function updateBullets() {
-    let currentBulletSpeed = powerUpActive ? BULLET_SPEED * 1.5 : BULLET_SPEED;
-    bullets.forEach(bullet => {
-        bullet.y -= currentBulletSpeed;
-    });
-    bullets = bullets.filter(bullet => bullet.y + BULLET_HEIGHT > 0);
-    alienBullets.forEach(bullet => {
-        bullet.y += alienBulletSpeed;
-    });
+    // Bullet movement
+    bullets.forEach(bullet => bullet.y -= BULLET_SPEED);
+    bullets = bullets.filter(bullet => bullet.y > 0);
+
+    // Alien bullet movement
+    alienBullets.forEach(bullet => bullet.y += alienBulletSpeed);
     alienBullets = alienBullets.filter(bullet => bullet.y < canvas.height);
-    if (powerUpActive) {
-        powerUpTimer--;
-        if (powerUpTimer <= 0) powerUpActive = false;
-    }
-}
 
-function alienShoot() {
-    if (Math.random() < 0.015) {
-        let columns = {};
-        aliens.forEach(alien => {
-            if (alien.alive) {
-                let col = Math.floor((alien.x - ALIEN_X_OFFSET) / (ALIEN_WIDTH + ALIEN_HORZ_PADDING));
-                if (!columns[col] || columns[col].y < alien.y) {
-                    columns[col] = alien;
-                }
-            }
-        });
-        let bottomAliens = Object.values(columns);
-        if (bottomAliens.length > 0) {
-            let shooter = bottomAliens[Math.floor(Math.random() * bottomAliens.length)];
+    // Alien movement
+    alienAnimTimer++;
+    if (alienAnimTimer >= 40) { // Slower animation
+        alienAnimTimer = 0;
+        alienAnimFrame = (alienAnimFrame + 1) % alienSprites.length;
+    }
+    aliens.forEach(alien => {
+        if (alien.alive) {
+            alien.x += alienSpeed * alienDirection;
+            alien.animFrame = alienAnimFrame;
+        }
+    });
+
+    // Alien firing logic
+    if (Math.random() < 0.005) {
+        let aliveAliens = aliens.filter(alien => alien.alive);
+        if (aliveAliens.length > 0) {
+            let shooter = aliveAliens[Math.floor(Math.random() * aliveAliens.length)];
             alienBullets.push({
                 x: shooter.x + shooter.width / 2 - BULLET_WIDTH / 2,
-                y: shooter.y + shooter.height
+                y: shooter.y + shooter.height,
+                w: BULLET_WIDTH,
+                h: BULLET_HEIGHT
             });
         }
     }
-}
 
-function updateAliens() {
-    let moveDown = false;
-    let aliveAliens = aliens.filter(a => a.alive);
-    let leftMost = Math.min(...aliveAliens.map(a => a.x));
-    let rightMost = Math.max(...aliveAliens.map(a => a.x + a.width));
-    
-    let step = aliveAliens.length <= 5 ? 2 : 1;
-    let speed = aliveAliens.length <= 5 ? alienSpeed * 2 : alienSpeed;
-    
-    if (alienDirection === 1 && rightMost + step > canvas.width) moveDown = true;
-    if (alienDirection === -1 && leftMost - step < 0) moveDown = true;
-
-    aliens.forEach(alien => {
-        if (!alien.alive) return;
-        if (moveDown) {
-            alien.y += ALIEN_HEIGHT / 3;
-        } else {
-            alien.x += step * alienDirection;
+    // Alien bounds check
+    let edgeReached = false;
+    for (const alien of aliens) {
+        if (alien.alive) {
+            if (alienDirection === 1 && alien.x + alien.width >= canvas.width - 20) {
+                edgeReached = true;
+            }
+            if (alienDirection === -1 && alien.x <= 20) {
+                edgeReached = true;
+            }
         }
-        alien.animFrame = (alien.animFrame + 0.1) % alienSprites.length;
-    });
-    if (moveDown) alienDirection *= -1;
-    if (aliveAliens.length > 0 && isSoundEnabled && canPlayAudio) alienMoveSound.play().catch(e => console.error('Alien move sound error:', e));
-    else alienMoveSound.pause();
-}
+    }
 
-function nextLevel() {
-    level++;
-    console.log('Level increased to:', level);
-    alienSpeed += 0.05;
-    ufoSpeed += 0.2;
-    alienBulletSpeed += 0.1;
-    ufo.speed = ufoSpeed;
-    alienBullets = [];
-    if (lives < maxLives) lives++;
-    createAliens();
-    resetPlayer();
-    createBarriers();
-    isLevelTransitioning = false;
-}
+    if (edgeReached) {
+        alienDirection *= -1;
+        aliens.forEach(alien => {
+            alien.y += 20;
+        });
+    }
 
-function resetPlayer() {
-    player.x = canvas.width / 2 - PLAYER_WIDTH / 2;
-    player.y = canvas.height - PLAYER_HEIGHT - 20;
-    player.dx = 0;
-    bullets = [];
-    alienBullets = [];
+    // UFO movement and animation
+    ufoAnimTimer++;
+    if (ufoAnimTimer >= 5) {
+        ufoAnimTimer = 0;
+        ufoAnimFrame = (ufoAnimFrame + 1) % ufoSprites.length;
+    }
+    updateUFO();
+
+    // Collisions
+    checkCollisions();
+    updateExplosions();
+
+    // Check for game over or win conditions
+    let allAliensDead = aliens.every(alien => !alien.alive);
+    if (allAliensDead) {
+        if (!isLevelTransitioning) {
+            isLevelTransitioning = true;
+            setTimeout(() => {
+                levelUp();
+                isLevelTransitioning = false;
+            }, 3000); // 3-second delay for level transition
+        }
+    }
+
+    if (lives <= 0) {
+        gameOver = true;
+        saveHighScoreToDB(username, score);
+    }
 }
 
 function checkCollisions() {
-    bullets.forEach((bullet, bIdx) => {
-        aliens.forEach((alien, aIdx) => {
+    // Player bullets vs Aliens
+    bullets = bullets.filter(bullet => {
+        let hit = false;
+        aliens.forEach(alien => {
             if (alien.alive &&
                 bullet.x < alien.x + alien.width &&
                 bullet.x + BULLET_WIDTH > alien.x &&
                 bullet.y < alien.y + alien.height &&
                 bullet.y + BULLET_HEIGHT > alien.y) {
                 alien.alive = false;
-                bullets.splice(bIdx, 1);
                 score += ALIEN_POINTS;
-                if (score > highScore) {
-                    highScore = score;
-                    localStorage.setItem('highScore', highScore);
-                    saveHighScoreToDB(username, highScore);
-                }
+                explosions.push({
+                    x: alien.x,
+                    y: alien.y,
+                    w: alien.width,
+                    h: alien.height,
+                    frame: 0
+                });
                 playExplosionSound();
-                explosions.push({ x: alien.x, y: alien.y, frame: 0, done: false });
+                hit = true;
             }
         });
+        return !hit;
+    });
 
+    // Player bullets vs UFO
+    bullets = bullets.filter(bullet => {
         if (ufo.alive &&
             bullet.x < ufo.x + ufo.w &&
             bullet.x + BULLET_WIDTH > ufo.x &&
             bullet.y < ufo.y + ufo.h &&
             bullet.y + BULLET_HEIGHT > ufo.y) {
-            bullets.splice(bIdx, 1);
-            score += UFO_HIT_POINTS;
             ufo.health--;
             if (ufo.health <= 0) {
                 ufo.alive = false;
                 ufoTimer = 0;
-                ufoRespawnTime = Math.floor(Math.random() * (UFO_RESPAWN_MAX - UFO_RESPAWN_MIN + 1)) + UFO_RESPAWN_MIN;
+                score += UFO_HIT_POINTS;
+                ufoSound.pause();
+                explosions.push({
+                    x: ufo.x,
+                    y: ufo.y,
+                    w: ufo.w,
+                    h: ufo.h,
+                    frame: 0
+                });
                 playExplosionSound();
-                explosions.push({ x: ufo.x, y: ufo.y, frame: 0, done: false });
-                if (isSoundEnabled && canPlayAudio) ufoSound.pause();
             }
-            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('highScore', highScore);
-                saveHighScoreToDB(username, highScore);
-            }
+            return false; // Remove bullet
         }
+        return true;
     });
-    aliens.forEach(alien => {
-        if (alien.alive && alien.y + alien.height >= player.y) {
-            lives--;
-            alienBullets = [];
-            playExplosionSound();
-            if (lives > 0) {
-                resetPlayer();
-                aliens.forEach(a => { a.y -= ALIEN_HEIGHT * 2; });
-            } else {
-                gameOver = true;
-                saveHighScoreToDB(username, highScore);
-            }
-        }
-    });
-    alienBullets.forEach((bullet, idx) => {
+
+    // Alien bullets vs Player
+    alienBullets = alienBullets.filter(bullet => {
         if (bullet.x < player.x + player.width &&
             bullet.x + BULLET_WIDTH > player.x &&
             bullet.y < player.y + player.height &&
             bullet.y + BULLET_HEIGHT > player.y) {
             lives--;
-            alienBullets = [];
-            playExplosionSound();
-            if (lives > 0) {
-                resetPlayer();
-            } else {
-                gameOver = true;
-                saveHighScoreToDB(username, highScore);
-            }
+            return false; // Remove alien bullet
         }
+        return true;
     });
+
+    // Player bullets vs Alien bullets
+    let newAlienBullets = [];
+    alienBullets.forEach(ab => {
+        let collided = false;
+        bullets.forEach(pb => {
+            if (ab.x < pb.x + BULLET_WIDTH &&
+                ab.x + BULLET_WIDTH > pb.x &&
+                ab.y < pb.y + BULLET_HEIGHT &&
+                ab.y + BULLET_HEIGHT > pb.y) {
+                collided = true;
+            }
+        });
+        if (!collided) newAlienBullets.push(ab);
+    });
+    alienBullets = newAlienBullets;
+
+    // Bullets vs Barriers
+    checkBarrierCollisions();
 }
 
 function checkBarrierCollisions() {
@@ -755,7 +732,6 @@ function checkBarrierCollisions() {
         });
         return !hit;
     });
-
     alienBullets = alienBullets.filter(bullet => {
         let hit = false;
         barriers.forEach(barrier => {
@@ -774,128 +750,101 @@ function checkBarrierCollisions() {
     });
 }
 
-gameLoop.isRunning = false;
-
-function gameLoop() {
-    if (!gameLoop.isRunning) return;
-
+function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
+    drawPlayer();
+    drawBullets();
+    drawBarriers();
+    drawAliens();
+    drawUFO();
+    drawExplosions();
 
     if (paused) {
-        drawPlayer();
-        drawBullets();
-        drawAliens();
-        drawUFO();
-        drawBarriers();
-        drawExplosions();
-        drawPaused();
-        requestAnimationFrame(gameLoop);
-        return;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = '50px "Press Start 2P"';
+        ctx.textAlign = 'center';
+        ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
     }
-
-    if (!gameOver && !isLevelTransitioning) {
-        updatePlayer();
-        updateBullets();
-        updateAliens();
-        updateUFO();
-        alienShoot();
-        checkCollisions();
-        checkBarrierCollisions();
-        alienAnimTimer++;
-        if (alienAnimTimer > 10) {
-            alienAnimFrame = (alienAnimFrame + 1) % alienSprites.length;
-            alienAnimTimer = 0;
-        }
-        drawPlayer();
-        drawBullets();
-        drawAliens();
-        drawUFO();
-        drawBarriers();
-        drawExplosions();
-
-        if (aliens.every(alien => !alien.alive)) {
-            console.log('All aliens defeated, transitioning to level:', level + 1);
-            isLevelTransitioning = true;
-            ctx.fillStyle = '#0ff';
-            ctx.font = '48px "Courier New"';
-            ctx.textAlign = 'center';
-            ctx.fillText(`LEVEL ${level + 1}`, canvas.width / 2, canvas.height / 2);
-            setTimeout(() => {
-                nextLevel();
-                requestAnimationFrame(gameLoop);
-            }, 2000);
-            return;
-        }
-        requestAnimationFrame(gameLoop);
-    } else if (gameOver) {
-        drawPlayer();
-        drawBullets();
-        drawAliens();
-        drawUFO();
-        drawBarriers();
-        drawExplosions();
-        drawGameOver();
-        gameLoop.isRunning = false;
-    } else {
-        requestAnimationFrame(gameLoop);
+    if (gameOver) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = '50px "Press Start 2P"';
+        ctx.textAlign = 'center';
+        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+        ctx.font = '20px "Press Start 2P"';
+        ctx.fillText('Press R to Restart', canvas.width / 2, canvas.height / 2 + 50);
     }
-    console.log('Game loop running, level:', level);
 }
 
-window.addEventListener('click', () => {
-    canPlayAudio = true;
-    console.log('Audio enabled after user interaction');
-});
+let lastTimestamp = 0;
+function gameLoop(timestamp = 0) {
+    if (gameOver || win) {
+        return;
+    }
+    const delta = timestamp - lastTimestamp;
+    lastTimestamp = timestamp;
+
+    if (!paused) {
+        update();
+        draw();
+    }
+    requestAnimationFrame(gameLoop);
+}
+
+function resetGame() {
+    lives = 3;
+    score = 0;
+    level = 1;
+    alienSpeed = ALIEN_SPEED;
+    alienBulletSpeed = ALIEN_BULLET_SPEED;
+    bullets = [];
+    alienBullets = [];
+    aliens = [];
+    powerUpActive = false;
+    powerUpTimer = 0;
+    ufo.alive = false;
+    paused = false;
+    gameOver = false;
+    win = false;
+    createAliens();
+    createBarriers();
+    updateLeaderboard();
+}
+
+function levelUp() {
+    level++;
+    alienSpeed += 0.05;
+    alienBulletSpeed += 0.05;
+    createAliens();
+    createBarriers();
+}
+
+function resetPlayer() {
+    player.x = canvas.width / 2 - player.width / 2;
+    player.dx = 0;
+    bullets = [];
+}
 
 window.addEventListener('keydown', e => {
-    if (e.code === 'ArrowLeft') player.dx = -PLAYER_SPEED;
-    if (e.code === 'ArrowRight') player.dx = PLAYER_SPEED;
-    if (e.code === 'Space' && !gameOver && !paused && isSoundEnabled && canPlayAudio) {
+    if (gameOver && e.code === 'KeyR') {
+        resetGame();
+    }
+    if (e.code === 'ArrowLeft') player.dx = -1;
+    if (e.code === 'ArrowRight') player.dx = 1;
+    if (e.code === 'Space' && bullets.length < 5 && !paused) {
         bullets.push({
             x: player.x + player.width / 2 - BULLET_WIDTH / 2,
             y: player.y,
+            w: BULLET_WIDTH,
+            h: BULLET_HEIGHT
         });
-        shootSound.play().catch(e => console.error('Shoot sound error:', e));
-    }
-    if (e.code === 'KeyR' && gameOver) {
-        stopAllSounds();
-        lives = 3;
-        score = 0;
-        level = 1;
-        alienSpeed = ALIEN_SPEED;
-        ufoSpeed = UFO_SPEED;
-        alienBulletSpeed = ALIEN_BULLET_SPEED;
-        ufo.speed = ufoSpeed;
-        gameOver = false;
-        win = false;
-        paused = true;
-        powerUpActive = false;
-        powerUpTimer = 0;
-        bullets = [];
-        alienBullets = [];
-        explosions = [];
-        ufo = {
-            x: -UFO_WIDTH,
-            y: 60,
-            w: UFO_WIDTH,
-            h: UFO_HEIGHT,
-            alive: false,
-            health: UFO_HEALTH,
-            dir: 1,
-            speed: ufoSpeed
-        };
-        alienAnimFrame = 0;
-        alienAnimTimer = 0;
-        ufoAnimFrame = 0;
-        ufoAnimTimer = 0;
-        ufoTimer = 0;
-        ufoRespawnTime = Math.floor(Math.random() * (UFO_RESPAWN_MAX - UFO_RESPAWN_MIN + 1)) + UFO_RESPAWN_MIN;
-        createAliens();
-        createBarriers();
-        resetPlayer();
-        gameLoop.isRunning = true;
-        requestAnimationFrame(gameLoop);
+        if (isSoundEnabled) {
+            shootSound.play().catch(e => console.error('Shoot sound play error:', e));
+        }
     }
     if (e.code === 'KeyP') {
         paused = !paused;
@@ -921,13 +870,25 @@ function resizeCanvas() {
 }
 
 window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
+// Don't call resizeCanvas() and initial game loop immediately
+// The game will start after the nickname is set
+// resizeCanvas();
 
-createAliens();
-createBarriers();
-updateLeaderboard();
-gameLoop.isRunning = true;
-requestAnimationFrame(gameLoop);
+// Instead of starting the game immediately, show the modal
+function initGame() {
+    let username = getCookie('username');
+    if (!username) {
+        nicknameModal.style.display = 'block';
+        modalNicknameInput.focus();
+    } else {
+        gameLoop();
+        updateLeaderboard();
+        createAliens();
+        createBarriers();
+        console.log(`User already has a nickname: ${username}. Starting game.`);
+    }
+}
+initGame();
 
 function checkImageLoading(img, name) {
     img.onload = () => console.log(`${name} загружен успешно`);
@@ -937,6 +898,6 @@ function checkImageLoading(img, name) {
 checkImageLoading(playerImg, 'Корабль игрока');
 checkImageLoading(bulletImg, 'Пуля');
 checkImageLoading(backgroundImg, 'Фон');
-alienSprites.forEach((img, i) => checkImageLoading(img, `Спрайт пришельца ${i+1}`));
-explosionSprites.forEach((img, i) => checkImageLoading(img, `Спрайт взрыва ${i+1}`));
-ufoSprites.forEach((img, i) => checkImageLoading(img, `Спрайт НЛО ${i+1}`));
+alienSprites.forEach((img, i) => checkImageLoading(img, `Спрайт пришельца ${i}`));
+explosionSprites.forEach((img, i) => checkImageLoading(img, `Спрайт взрыва ${i}`));
+ufoSprites.forEach((img, i) => checkImageLoading(img, `Спрайт НЛО ${i}`));
