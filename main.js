@@ -397,7 +397,7 @@ async function updateLeaderboard() {
         const leaderboard = document.getElementById('leaderboard');
         leaderboard.innerHTML = scores.map((s, i) => `<li>${i + 1}. ${s.name}: ${s.score}</li>`).join('');
         const playerRank = document.getElementById('playerRank');
-        playerRank.textContent = rank ? `Your Rank: ${rank}` : 'Your Rank: Not in top 25';
+        playerRank.textContent = rank `Your Rank: ${rank}`;
     } catch (error) {
         console.error('Error fetching leaderboard:', error);
     }
@@ -925,13 +925,15 @@ window.addEventListener('click', () => {
 window.addEventListener('keydown', e => {
     if (e.code === 'ArrowLeft') player.dx = -PLAYER_SPEED;
     if (e.code === 'ArrowRight') player.dx = PLAYER_SPEED;
-    if (e.code === 'Space' && !gameOver && !paused && isSoundEnabled && canPlayAudio) {
-        bullets.push({
-            x: player.x + player.width / 2 - BULLET_WIDTH / 2,
-            y: player.y,
-        });
+    if (e.code === 'Space' && !gameOver && !paused) {  // Видаляємо && isSoundEnabled && canPlayAudio
+    bullets.push({
+        x: player.x + player.width / 2 - BULLET_WIDTH / 2,
+        y: player.y,
+    });
+    if (isSoundEnabled && canPlayAudio) {  // Звук граємо окремо, якщо увімкнено
         shootSound.play().catch(e => console.error('Shoot sound error:', e));
     }
+}
     if (e.code === 'KeyR' && gameOver) {
         stopAllSounds();
         lives = 3;

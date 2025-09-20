@@ -410,3 +410,12 @@ button:hover {
     color:#ffffff;
 }
 
+#soundButton:focus {
+    outline: none; /* Прибирає обводку фокусу */
+    box-shadow: none;
+}
+
+/* Або взагалі заборонити фокус для кнопки */
+#soundButton:focus-visible {
+    outline: none;
+}
