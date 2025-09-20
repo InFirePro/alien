@@ -757,7 +757,7 @@ function checkBarrierCollisions() {
                     bullet.y < seg.y + seg.h &&
                     bullet.y + BULLET_HEIGHT > seg.y) {
                     seg.alive = false;
-                    bullet.splice(abIdx, 1);
+                    alienBullets.splice(abIdx, 1); // <-- Виправлення тут
                 }
             });
         });
