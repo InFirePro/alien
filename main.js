@@ -734,33 +734,38 @@ function checkCollisions() {
 }
 
 function checkBarrierCollisions() {
-    bullets.forEach((bullet, bIdx) => {
+    bullets = bullets.filter(bullet => {
+        let hit = false;
         barriers.forEach(barrier => {
-            barrier.forEach((seg, sIdx) => {
+            barrier.forEach(seg => {
                 if (seg.alive &&
                     bullet.x < seg.x + seg.w &&
                     bullet.x + BULLET_WIDTH > seg.x &&
                     bullet.y < seg.y + seg.h &&
                     bullet.y + BULLET_HEIGHT > seg.y) {
                     seg.alive = false;
-                    bullets.splice(bIdx, 1);
+                    hit = true;
                 }
             });
         });
+        return !hit;
     });
-    alienBullets.forEach((bullet, abIdx) => {
+
+    alienBullets = alienBullets.filter(bullet => {
+        let hit = false;
         barriers.forEach(barrier => {
-            barrier.forEach((seg, sIdx) => {
+            barrier.forEach(seg => {
                 if (seg.alive &&
                     bullet.x < seg.x + seg.w &&
                     bullet.x + BULLET_WIDTH > seg.x &&
                     bullet.y < seg.y + seg.h &&
                     bullet.y + BULLET_HEIGHT > seg.y) {
                     seg.alive = false;
-                    alienBullets.splice(abIdx, 1); // <-- Виправлення тут
+                    hit = true;
                 }
             });
         });
+        return !hit;
     });
 }
 
