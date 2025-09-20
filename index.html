@@ -27,7 +27,7 @@
       <aside class="left-sidebar">
         <div class="sidebar-section">
           <h3>🎮 Controls</h3>
-          <ul>
+          <ul class="p">
             <li>← →: Move Ship</li>
             <li>Space: Shoot</li>
             <li>P: Pause</li>
@@ -36,7 +36,7 @@
         </div>
         <div class="sidebar-section">
           <h3>🎯 Pro Tips</h3>
-          <ul>
+          <ul class="p">
             <li>Use barriers for cover</li>
             <li>Target bottom row aliens first</li>
             <li>Hit the UFO for bonus points</li>
@@ -47,12 +47,12 @@
           <div class="sidebar-section">
             <h3>🏆 Leaderboard</h3>
             <p id="playerRank"></p>
-            <ul id="leaderboard"></ul>
+            <ul class="p2" id="leaderboard"></ul>
           </div>
           <div class="sidebar-section">
             <h3>💬 Chat</h3>
-            <p id="chatError"></p>
-            <ul id="chatMessages"></ul>
+            <p id="onlinePlayers">Online: 0</p>
+            <ul class="p" id="chatMessages"></ul>
             <input
               id="chatInput"
               type="text"
@@ -60,6 +60,7 @@
               maxlength="200"
             />
             <button onclick="sendChatMessage()">Send</button>
+            <p id="chatError"></p>
           </div>
         </div>
       </aside>
@@ -73,7 +74,7 @@
       <aside class="right-sidebar">
         <div class="sidebar-section">
           <h3>👾 Fun Facts</h3>
-          <ul>
+          <ul class="p">
             <li>Aliens speed up as you destroy them</li>
             <li>Original game used just 2KB of RAM</li>
             <li>Generated over $600M by 1982</li>
@@ -82,7 +83,7 @@
         </div>
         <div class="sidebar-section">
           <h3>🏆 World Records</h3>
-          <ul>
+          <ul class="p">
             <li>Highest Score: 1,006,600 points</li>
             <li>Longest Single Game: 38 hours</li>
             <li>Most Cabinets Sold: 360,000 units</li>
@@ -106,12 +107,12 @@
         </div>
         <div class="sidebar-section">
           <h3>📜 History</h3>
-          <p>
+          <p class="p">
             Space Invaders, created by Tomohiro Nishikado in 1978,
             revolutionized gaming as one of the first shoot 'em up games. It
             sparked the arcade golden age and caused a coin shortage in Japan.
           </p>
-          <ul>
+          <ul class="p">
             <li>First game with high score tracking</li>
             <li>Pioneered the shoot 'em up genre</li>
             <li>Inspired countless modern games</li>
@@ -156,19 +157,28 @@
           </div>
         </div>
       </aside>
-    </div>
-    <div id="nicknameModal" class="modal">
-      <div class="modal-content">
-        <h2>Enter your nickname</h2>
-        <input
-          type="text"
-          id="modalNicknameInput"
-          placeholder="Nickname"
-          maxlength="20"
-        />
-        <button id="modalSetNicknameBtn">Play</button>
+      <div id="nicknameModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Enter your nickname</h3>
+            <span class="close">&times;</span>
+          </div>
+          <div class="modal-body">
+            <input
+              type="text"
+              id="nicknameModalInput"
+              placeholder="Your nickname (max 20 chars)"
+              maxlength="20"
+            />
+          </div>
+          <div class="modal-footer">
+            <button id="confirmModalBtn">OK</button>
+            <button id="cancelModalBtn">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
+
     <script src="main.js"></script>
   </body>
 </html>

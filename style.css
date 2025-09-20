@@ -16,7 +16,7 @@ body {
 }
 
 .container {
-    max-width: 2500px;
+    max-width: 2300px;
     width: 100%;
     display: grid;
     grid-template-columns: 1fr 3fr 1fr;
@@ -27,6 +27,9 @@ header {
     grid-column: 1 / -1;
     text-align: center;
     margin-bottom: 15px;
+}
+p {
+    color:#00ff00;
 }
 
 h1 {
@@ -142,7 +145,7 @@ button:hover {
 }
 
 #chatMessages {
-    max-height: 400px;
+    max-height: 300px;
     overflow-y: auto;
     background: #222;
     padding: 10px;
@@ -152,21 +155,15 @@ button:hover {
 }
 
 #chatMessages li {
-    font-size: 0.7rem;
-    color: #fff;
-    border-bottom: 1px dashed #333;
-    padding: 5px 0;
-}
-
-#chatMessages li:last-child {
-    border-bottom: none;
-}
-
-#chatError {
     font-size: 0.65rem;
-    color: #ff2d55;
-    margin: 5px 0;
-    min-height: 1em;
+    margin-bottom: 5px;
+    word-wrap: break-word;
+}
+
+#playerRank {
+    font-size: 0.7rem;
+    color: #00ff00;
+    margin-bottom: 10px;
 }
 
 @media (max-width: 1024px) {
@@ -215,46 +212,201 @@ button:hover {
 
     #nicknameInput, #chatInput, button {
         font-size: 0.6rem;
+        padding: 4px;
     }
 }
 
-/* Modal Styles */
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.4rem;
+    }
+
+    .subtitle {
+        font-size: 0.6rem;
+    }
+
+    .sidebar-section h3 {
+        font-size: 0.7rem;
+    }
+
+    .sidebar-section li, .sidebar-section p {
+        font-size: 0.55rem;
+    }
+
+    .container {
+        padding: 10px;
+    }
+
+    .sidebar-subcontainer {
+        padding: 6px;
+    }
+
+    #nicknameInput, #chatInput, button {
+        font-size: 0.55rem;
+        padding: 3px;
+    }
+}
+
+#onlinePlayers {
+    color: #21f055;
+    font-size: 0.75rem;
+}
+
+/* НОВІ: Стилі для модального вікна */
 .modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 100; /* Sit on top */
+    display: none;
+    position: fixed;
+    z-index: 1000;
     left: 0;
     top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgb(0,0,0); /* Fallback color */
-    background-color: rgba(0,0,0,0.8); /* Black w/ opacity */
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(2px);
 }
 
 .modal-content {
-    background-color: #111;
+    background: #111;
+    margin: 15% auto;
+    padding: 0;
     border: 2px solid #00ff00;
-    box-shadow: 0 0 15px #00ff00;
-    margin: 15% auto; /* 15% from the top and centered */
-    padding: 20px;
-    width: 80%; /* Could be more or less, depending on screen size */
-    max-width: 400px;
-    text-align: center;
+    border-radius: 5px;
+    width: 90%;
+    max-width: 350px;
+    box-shadow: 0 0 20px #00ff00;
+    font-family: 'Press Start 2P', cursive;
 }
 
-.modal-content h2 {
+.modal-header {
+    padding: 12px 15px;
+    border-bottom: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    font-size: 0.8rem;
     color: #ff2d55;
-    font-size: 1rem;
-    margin-bottom: 20px;
+    text-shadow: 1px 1px 0 #00ff00;
+    margin: 0;
 }
 
-#modalNicknameInput {
-    width: 80%;
-    margin-bottom: 15px;
-    text-align: center;
+.close {
+    color: #aaa;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
 }
 
-#modalSetNicknameBtn {
-    width: 80%;
+.close:hover {
+    color: #fff;
 }
+
+.modal-body {
+    padding: 15px;
+}
+
+#nicknameModalInput {
+    width: 100%;
+    background: #222;
+    color: #fff;
+    border: 2px solid #00ff00;
+    padding: 8px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.7rem;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+#nicknameModalInput:focus {
+    outline: none;
+    border-color: #ff2d55;
+    box-shadow: 0 0 5px #ff2d55;
+}
+
+.modal-footer {
+    padding: 10px 15px;
+    border-top: 1px solid #444;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.modal-footer button {
+    padding: 6px 12px;
+    font-size: 0.65rem;
+    font-family: 'Press Start 2P', cursive;
+    border: 2px solid #00ff00;
+}
+
+#confirmModalBtn {
+    background: #00ff00;
+    color: #111;
+}
+
+#confirmModalBtn:hover {
+    background: #00cc00;
+}
+
+#cancelModalBtn {
+    background: #666;
+    color: #fff;
+}
+
+#cancelModalBtn:hover {
+    background: #555;
+}
+
+/* Адаптивність для модалу */
+@media (max-width: 768px) {
+    .modal-content {
+        margin: 20% auto;
+        width: 95%;
+        max-width: none;
+    }
+    
+    .modal-header h3 {
+        font-size: 0.7rem;
+    }
+    
+    #nicknameModalInput {
+        font-size: 0.65rem;
+        padding: 6px;
+    }
+    
+    .modal-footer button {
+        font-size: 0.6rem;
+        padding: 5px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        margin: 25% auto;
+        width: 98%;
+    }
+    
+    .modal-header {
+        padding: 10px;
+    }
+    
+    .modal-body {
+        padding: 12px;
+    }
+    
+    .modal-footer {
+        padding: 8px 12px;
+    }
+}
+
+
+.p2 {
+    color:#35fc03;
+}
+
+.p {
+    color:#ffffff;
+}
+
