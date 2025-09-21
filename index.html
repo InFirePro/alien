@@ -19,9 +19,6 @@
         <div class="subtitle">
           CA: *****************************************
         </div>
-        <div>
-          <button id="soundButton" onclick="toggleSound()">Mute Sound</button>
-        </div>
       </header>
 
       <aside class="left-sidebar">
@@ -150,7 +147,10 @@
               placeholder="Enter your nickname"
               maxlength="20"
             />
-            <button onclick="setNickname()">Set Nickname</button>
+            <button onclick="setNickname()">Set Nickname</button
+            ><button id="soundButton" onclick="toggleSound()">
+              Mute Sound
+            </button>
           </div>
         </div>
       </aside>
