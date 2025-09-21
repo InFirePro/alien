@@ -59,6 +59,16 @@ app.use((req, res, next) => {
     next();
 });
 
+// Function to broadcast highscore update to all connected clients
+function broadcastHighscoreUpdate() {
+    console.log('📊 Broadcasting highscore update to all clients');
+    wss.clients.forEach(clientWs => {
+        if (clientWs.readyState === WebSocket.OPEN) {
+            clientWs.send(JSON.stringify({ type: 'highscore_update' }));
+        }
+    });
+}
+
 // Save high score - Update if exists and new score is higher, else insert
 app.post('/api/highscore', (req, res) => {
     const { name, score } = req.body;
@@ -73,6 +83,7 @@ app.post('/api/highscore', (req, res) => {
         }
 
         if (row && row.score >= score) {
+            console.log(`Score not updated for ${name}: ${score} <= existing ${row.score}`);
             return res.json({ message: 'Score not updated, existing score is higher' });
         }
 
@@ -83,6 +94,7 @@ app.post('/api/highscore', (req, res) => {
                     return res.status(500).json({ error: 'Database error' });
                 }
                 console.log(`Updated score for ${name}: ${score}`);
+                broadcastHighscoreUpdate(); // Broadcast update to all clients
                 res.json({ message: 'Score updated' });
             });
         } else {
@@ -91,7 +103,8 @@ app.post('/api/highscore', (req, res) => {
                     console.error('Error saving score:', err.message);
                     return res.status(500).json({ error: 'Database error' });
                 }
-                console.log(`Saved score for ${name}: ${score}`);
+                console.log(`Saved new score for ${name}: ${score}`);
+                broadcastHighscoreUpdate(); // Broadcast update to all clients
                 res.json({ message: 'Score saved' });
             });
         }
@@ -139,6 +152,7 @@ app.post('/api/update_nickname', (req, res) => {
             return res.status(404).json({ error: 'Old nickname not found' });
         }
         console.log(`Updated nickname from ${old_name} to ${new_name}`);
+        broadcastHighscoreUpdate(); // Broadcast update to all clients
         res.json({ message: 'Nickname updated' });
     });
 });
@@ -219,7 +233,6 @@ wss.on('connection', (ws, req) => {
         });
     });
 });
-
 
 server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);

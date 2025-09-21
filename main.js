@@ -36,7 +36,7 @@ const UFO_HEIGHT = 80;
 const UFO_SPEED = 1;
 const UFO_HEALTH = 3; // Hits required to destroy UFO
 const UFO_RESPAWN_MIN = 900; // ~15 sec at 60 FPS
-const UFO_RESPAWN_MAX = 3800; // ~30 sec at 60 FPS // ~15 sec at 60 FPS
+const UFO_RESPAWN_MAX = 3800; // ~30 sec at 60 FPS
 
 // Barriers
 const BARRIER_WIDTH = 120;
@@ -75,7 +75,6 @@ function setCookie(name, value, days) {
         expires = "; expires=" + date.toUTCString();
     }
     document.cookie = `${name}=${encodeURIComponent(value)}${expires}; path=/`;
-    console.log(`Set cookie: ${name}=${value}, expires=${expires}`);
 }
 
 function getCookie(name) {
@@ -85,12 +84,9 @@ function getCookie(name) {
         let c = ca[i];
         while (c.charAt(0) == ' ') c = c.substring(1, c.length);
         if (c.indexOf(nameEQ) == 0) {
-            let value = decodeURIComponent(c.substring(nameEQ.length, c.length));
-            console.log(`Got cookie: ${name}=${value}`);
-            return value;
+            return decodeURIComponent(c.substring(nameEQ.length, c.length));
         }
     }
-    console.log(`Cookie not found: ${name}`);
     return null;
 }
 
@@ -103,8 +99,7 @@ function showNicknameModal(callback) {
         modal.style.display = 'block';
         input.value = '';
         input.focus();
-        document.body.style.overflow = 'hidden'; // Блок скролу сторінки
-        console.log('Nickname modal shown');
+        document.body.style.overflow = 'hidden';
     }
 }
 
@@ -115,7 +110,6 @@ function closeNicknameModal() {
         document.body.style.overflow = 'auto';
     }
     currentNicknameCallback = null;
-    console.log('Nickname modal closed');
 }
 
 // ЗМІНА: Замість prompt — перевірка cookie і виклик модалу
@@ -123,14 +117,11 @@ let username = getCookie('username');
 if (!username) {
     showNicknameModal((newUsername) => {
         username = newUsername || 'Anonymous';
-        setCookie('username', username, 30); // Store for 30 days
-        console.log(`New username set via modal: ${username}`);
+        setCookie('username', username, 30);
     });
-} else {
-    console.log(`Existing username from cookie: ${username}`);
 }
 
-// WebSocket for real-time chat
+// WebSocket for real-time chat and leaderboard updates
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
 const ws = new WebSocket(`${protocol}//${window.location.host}`);
 ws.onopen = () => console.log('WebSocket connected');
@@ -148,10 +139,15 @@ ws.onmessage = (event) => {
                 onlinePlayers.textContent = `Online: ${data.count}`;
             }
         } else if (data.type === 'error') {
-            document.getElementById('chatError').textContent = data.message;
-            setTimeout(() => {
-                document.getElementById('chatError').textContent = '';
-            }, 3000);
+            const chatError = document.getElementById('chatError');
+            if (chatError) {
+                chatError.textContent = data.message;
+                setTimeout(() => {
+                    chatError.textContent = '';
+                }, 3000);
+            }
+        } else if (data.type === 'highscore_update') {
+            updateLeaderboard(); // Update leaderboard dynamically
         }
     } catch (e) {
         console.error('Invalid WebSocket message:', e);
@@ -160,10 +156,12 @@ ws.onmessage = (event) => {
 
 function addChatMessage({ name, message, timestamp }) {
     const chatMessages = document.getElementById('chatMessages');
+    if (!chatMessages) return;
+    
     const li = document.createElement('li');
     li.textContent = `[${new Date(timestamp).toLocaleTimeString()}] ${name}: ${message}`;
     chatMessages.appendChild(li);
-    chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to latest message
+    chatMessages.scrollTop = chatMessages.scrollHeight;
     // Limit to 50 messages to prevent DOM overload
     while (chatMessages.children.length > 50) {
         chatMessages.removeChild(chatMessages.firstChild);
@@ -172,49 +170,100 @@ function addChatMessage({ name, message, timestamp }) {
 
 function sendChatMessage() {
     const chatInput = document.getElementById('chatInput');
+    if (!chatInput) return;
+    
     const message = chatInput.value.trim();
     const now = Date.now();
     if (!message || message.length > 200) {
-        document.getElementById('chatError').textContent = 'Message is empty or too long';
-        setTimeout(() => {
-            document.getElementById('chatError').textContent = '';
-        }, 3000);
+        const chatError = document.getElementById('chatError');
+        if (chatError) {
+            chatError.textContent = 'Message is empty or too long';
+            setTimeout(() => {
+                chatError.textContent = '';
+            }, 3000);
+        }
         return;
     }
     if (now - lastMessageTime < 5000) {
-        document.getElementById('chatError').textContent = 'Please wait 5 seconds before sending another message';
-        setTimeout(() => {
-            document.getElementById('chatError').textContent = '';
-        }, 3000);
+        const chatError = document.getElementById('chatError');
+        if (chatError) {
+            chatError.textContent = 'Please wait 5 seconds before sending another message';
+            setTimeout(() => {
+                chatError.textContent = '';
+            }, 3000);
+        }
         return;
     }
-    ws.send(JSON.stringify({ type: 'chat', name: username, text: message }));
-    lastMessageTime = now;
-    chatInput.value = '';
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ 
+            type: 'chat', 
+            name: username || 'Anonymous', 
+            text: message 
+        }));
+        chatInput.value = '';
+        lastMessageTime = now;
+    }
+}
+
+// Функція для оновлення лідерборду
+async function updateLeaderboard() {
+    try {
+        const response = await fetch(`/api/highscores?name=${encodeURIComponent(username || '')}`);
+        const data = await response.json();
+        const leaderboard = document.getElementById('leaderboard');
+        if (leaderboard && data.scores) {
+            leaderboard.innerHTML = data.scores.map((score, index) => `
+                <li>${index + 1}. ${score.name}: ${score.score}</li>
+            `).join('');
+            
+            if (data.rank) {
+                const rankElement = document.getElementById('playerRank');
+                if (rankElement) {
+                    rankElement.textContent = `Your Rank: #${data.rank}`;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error updating leaderboard:', error);
+    }
+}
+
+// Збереження високого рахунку
+async function saveHighScore() {
+    if (!username || score < 100) return;
+    
+    try {
+        const response = await fetch('/api/highscore', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: username, score })
+        });
+        const result = await response.json();
+        if (result.message) {
+            updateLeaderboard();
+        }
+    } catch (error) {
+        console.error('Error saving high score:', error);
+    }
 }
 
 // Function to set nickname from input
 async function setNickname() {
     const oldUsername = username;
     const nicknameInput = document.getElementById('nicknameInput');
-    if (!nicknameInput) {
-        console.error('Nickname input element not found');
-        return;
-    }
+    if (!nicknameInput) return;
+    
     const newUsername = nicknameInput.value.trim() || 'Anonymous';
-    console.log(`setNickname called: oldUsername=${oldUsername}, newUsername=${newUsername}`);
     if (newUsername === oldUsername) {
-        console.log('Nickname unchanged, no update needed');
         nicknameInput.value = '';
         return;
     }
+    
     username = newUsername;
     setCookie('username', username, 30);
     nicknameInput.value = '';
-    console.log(`Nickname updated locally: ${username}`);
-    console.log(`Current cookies: ${document.cookie}`);
+    
     if (oldUsername !== 'Anonymous') {
-        console.log(`Updating nickname in DB: ${oldUsername} -> ${username}`);
         await updateNicknameInDB(oldUsername, username);
     }
     updateLeaderboard();
@@ -232,9 +281,6 @@ async function updateNicknameInDB(oldName, newName) {
         });
         if (response.ok) {
             console.log(`Nickname updated in database: ${oldName} -> ${newName}`);
-        } else {
-            const error = await response.json();
-            console.error('Failed to update nickname:', response.status, error);
         }
     } catch (error) {
         console.error('Error updating nickname:', error);
@@ -245,11 +291,12 @@ async function updateNicknameInDB(oldName, newName) {
 function toggleSound() {
     isSoundEnabled = !isSoundEnabled;
     const soundButton = document.getElementById('soundButton');
-    soundButton.textContent = isSoundEnabled ? 'Mute Sound' : 'Unmute Sound';
+    if (soundButton) {
+        soundButton.textContent = isSoundEnabled ? 'Mute Sound' : 'Unmute Sound';
+    }
     if (!isSoundEnabled) {
         stopAllSounds();
     }
-    console.log('Sound toggled:', isSoundEnabled ? 'Enabled' : 'Disabled');
 }
 
 // Load sprites
@@ -285,26 +332,22 @@ backgroundImg.src = './sprites/sprites_background_2.png';
 
 // Load sounds with error handling
 const shootSound = new Audio('./sounds/shoot.wav');
-shootSound.onerror = () => console.error('Failed to load shootSound');
 shootSound.volume = 0.3;
 shootSound.playbackRate = 2.0;
 
 const explosionSoundPool = [];
 for (let i = 0; i < 5; i++) {
     const sound = new Audio('./sounds/explosion.wav');
-    sound.onerror = () => console.error('Failed to load explosionSound');
     sound.volume = 0.4;
     sound.playbackRate = 1.5;
     explosionSoundPool.push(sound);
 }
 
 const ufoSound = new Audio('./sounds/ufo.wav');
-ufoSound.onerror = () => console.error('Failed to load ufoSound');
 ufoSound.volume = 0.2;
 ufoSound.loop = true;
 
 const alienMoveSound = new Audio('./sounds/alien_move.wav');
-alienMoveSound.onerror = () => console.error('Failed to load alienMoveSound');
 alienMoveSound.volume = 0.1;
 alienMoveSound.playbackRate = 1.5;
 alienMoveSound.loop = true;
@@ -326,11 +369,11 @@ function playExplosionSound() {
     if (!isSoundEnabled || !canPlayAudio) return;
     const sound = explosionSoundPool.find(s => s.paused || s.ended) || explosionSoundPool[0];
     sound.currentTime = 0;
-    sound.play().catch(e => console.error('Explosion sound play error:', e));
+    sound.play().catch(e => {});
     setTimeout(() => {
         sound.pause();
         sound.currentTime = 0;
-    }, 300); // Stop sound after 0.3 seconds
+    }, 300);
 }
 
 let lives = 3;
@@ -377,29 +420,27 @@ async function saveHighScoreToDB(name, score) {
             body: JSON.stringify({ name, score })
         });
         if (response.ok) {
-            console.log('High score saved/updated to database');
             updateLeaderboard();
-        } else {
-            console.error('Failed to save high score:', response.statusText);
         }
     } catch (error) {
         console.error('Error saving high score:', error);
     }
 }
 
-async function updateLeaderboard() {
+async function updateNicknameInDB(oldName, newName) {
     try {
-        const response = await fetch(`/api/highscores?name=${encodeURIComponent(username)}`);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await fetch('/api/update_nickname', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ old_name: oldName, new_name: newName })
+        });
+        if (response.ok) {
+            updateLeaderboard();
         }
-        const { scores, rank } = await response.json();
-        const leaderboard = document.getElementById('leaderboard');
-        leaderboard.innerHTML = scores.map((s, i) => `<li>${i + 1}. ${s.name}: ${s.score}</li>`).join('');
-        const playerRank = document.getElementById('playerRank');
-        playerRank.textContent = rank `Your Rank: ${rank}`;
     } catch (error) {
-        console.error('Error fetching leaderboard:', error);
+        console.error('Error updating nickname:', error);
     }
 }
 
@@ -417,7 +458,6 @@ function createAliens() {
             });
         }
     }
-    console.log('Aliens created:', aliens.length);
 }
 
 function createBarriers() {
@@ -442,16 +482,14 @@ function createBarriers() {
         }
         barriers.push(segments);
     }
-    console.log('Barriers created:', barriers.length);
 }
 
 function drawBackground() {
     if (backgroundImg.complete && backgroundImg.naturalWidth > 0) {
         ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
     } else {
-        ctx.fillStyle = '#111'; // Dark gray background
+        ctx.fillStyle = '#111';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        console.log('Background image not loaded, using solid color');
     }
 }
 
@@ -461,7 +499,6 @@ function drawPlayer() {
     } else {
         ctx.fillStyle = '#0ff';
         ctx.fillRect(player.x, player.y, player.width, player.height);
-        console.log('Player fallback used');
     }
     ctx.fillStyle = '#fff';
     ctx.font = '24px Arial';
@@ -483,7 +520,6 @@ function drawBullets() {
         } else {
             ctx.fillStyle = '#ff0';
             ctx.fillRect(bullet.x, bullet.y, BULLET_WIDTH, BULLET_HEIGHT);
-            console.log('Bullet fallback used');
         }
     });
     alienBullets.forEach(bullet => {
@@ -512,7 +548,6 @@ function drawAliens() {
             } else {
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(alien.x, alien.y, alien.width, alien.height);
-                console.log('Alien fallback used');
             }
         }
     });
@@ -526,7 +561,6 @@ function drawUFO() {
         } else {
             ctx.fillStyle = '#ff0';
             ctx.fillRect(ufo.x, ufo.y, ufo.w, ufo.h);
-            console.log('UFO fallback used');
         }
     }
 }
@@ -541,7 +575,7 @@ function updateUFO() {
             ufo.health = UFO_HEALTH;
             ufoTimer = 0;
             ufoRespawnTime = Math.floor(Math.random() * (UFO_RESPAWN_MAX - UFO_RESPAWN_MIN + 1)) + UFO_RESPAWN_MIN;
-            if (isSoundEnabled && canPlayAudio) ufoSound.play().catch(e => console.error('UFO sound play error:', e));
+            if (isSoundEnabled && canPlayAudio) ufoSound.play().catch(e => {});
         }
     }
     if (ufo.alive) {
@@ -567,7 +601,6 @@ function drawExplosions() {
         } else {
             ctx.fillStyle = '#ff0';
             ctx.fillRect(exp.x, exp.y, ALIEN_WIDTH, ALIEN_HEIGHT);
-            console.log('Explosion fallback used');
         }
         exp.frame++;
         if (exp.frame >= explosionSprites.length) {
@@ -650,7 +683,6 @@ function updateAliens() {
     let rightMost = Math.max(...aliveAliens.map(a => a.x + a.width));
     
     let step = aliveAliens.length <= 5 ? 2 : 1;
-    let speed = aliveAliens.length <= 5 ? alienSpeed * 2 : alienSpeed;
     
     if (alienDirection === 1 && rightMost + step > canvas.width) moveDown = true;
     if (alienDirection === -1 && leftMost - step < 0) moveDown = true;
@@ -665,13 +697,12 @@ function updateAliens() {
         alien.animFrame = (alien.animFrame + 0.1) % alienSprites.length;
     });
     if (moveDown) alienDirection *= -1;
-    if (aliveAliens.length > 0 && isSoundEnabled && canPlayAudio) alienMoveSound.play().catch(e => console.error('Alien move sound error:', e));
+    if (aliveAliens.length > 0 && isSoundEnabled && canPlayAudio) alienMoveSound.play().catch(e => {});
     else alienMoveSound.pause();
 }
 
 function nextLevel() {
     level++;
-    console.log('Level increased to:', level);
     alienSpeed += 0.05;
     ufoSpeed += 0.2;
     alienBulletSpeed += 0.1;
@@ -706,7 +737,7 @@ function checkCollisions() {
                 if (score > highScore) {
                     highScore = score;
                     localStorage.setItem('highScore', highScore);
-                    saveHighScoreToDB(username, highScore);
+                    saveHighScore();
                 }
                 playExplosionSound();
                 explosions.push({ x: alien.x, y: alien.y, frame: 0, done: false });
@@ -732,7 +763,7 @@ function checkCollisions() {
             if (score > highScore) {
                 highScore = score;
                 localStorage.setItem('highScore', highScore);
-                saveHighScoreToDB(username, highScore);
+                saveHighScore();
             }
         }
     });
@@ -746,7 +777,7 @@ function checkCollisions() {
                 aliens.forEach(a => { a.y -= ALIEN_HEIGHT * 2; });
             } else {
                 gameOver = true;
-                saveHighScoreToDB(username, highScore);
+                saveHighScore();
             }
         }
     });
@@ -762,7 +793,7 @@ function checkCollisions() {
                 resetPlayer();
             } else {
                 gameOver = true;
-                saveHighScoreToDB(username, highScore);
+                saveHighScore();
             }
         }
     });
@@ -845,7 +876,6 @@ function gameLoop() {
         drawExplosions();
 
         if (aliens.every(alien => !alien.alive)) {
-            console.log('All aliens defeated, transitioning to level:', level + 1);
             isLevelTransitioning = true;
             ctx.fillStyle = '#0ff';
             ctx.font = '48px "Courier New"';
@@ -870,13 +900,12 @@ function gameLoop() {
     } else {
         requestAnimationFrame(gameLoop);
     }
-    console.log('Game loop running, level:', level);
 }
 
-// НОВІ: Події для модалу (додай після всіх window.addEventListener)
+// НОВІ: Події для модалу
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('nicknameModal');
-    if (!modal) return; // Якщо модал не існує, виходимо
+    if (!modal) return;
 
     const closeBtn = modal.querySelector('.close');
     const cancelBtn = document.getElementById('cancelModalBtn');
@@ -915,25 +944,65 @@ document.addEventListener('DOMContentLoaded', () => {
             closeNicknameModal();
         }
     });
+
+    // Fix for mute button
+    const muteButton = document.getElementById('muteButton');
+    if (muteButton) {
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            muteButton.textContent = isSoundEnabled ? '🔊 Sound On' : '🔇 Mute Sound';
+            muteButton.style.background = isSoundEnabled ? '#4CAF50' : '#f44336';
+            if (!isSoundEnabled) {
+                stopAllSounds();
+            }
+        }
+
+        muteButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            toggleSound();
+            this.blur();
+        });
+
+        muteButton.addEventListener('keydown', function(e) {
+            if (e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.blur();
+                return false;
+            }
+        });
+
+        muteButton.style.cssText = `
+            background: ${isSoundEnabled ? '#4CAF50' : '#f44336'};
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            outline: none;
+        `;
+        muteButton.textContent = isSoundEnabled ? '🔊 Sound On' : '🔇 Mute Sound';
+    }
 });
 
 window.addEventListener('click', () => {
     canPlayAudio = true;
-    console.log('Audio enabled after user interaction');
 });
 
 window.addEventListener('keydown', e => {
     if (e.code === 'ArrowLeft') player.dx = -PLAYER_SPEED;
     if (e.code === 'ArrowRight') player.dx = PLAYER_SPEED;
-    if (e.code === 'Space' && !gameOver && !paused) {  // Видаляємо && isSoundEnabled && canPlayAudio
-    bullets.push({
-        x: player.x + player.width / 2 - BULLET_WIDTH / 2,
-        y: player.y,
-    });
-    if (isSoundEnabled && canPlayAudio) {  // Звук граємо окремо, якщо увімкнено
-        shootSound.play().catch(e => console.error('Shoot sound error:', e));
+    if (e.code === 'Space' && !gameOver && !paused) {
+        bullets.push({
+            x: player.x + player.width / 2 - BULLET_WIDTH / 2,
+            y: player.y,
+        });
+        if (isSoundEnabled && canPlayAudio) {
+            shootSound.play().catch(e => {});
+        }
     }
-}
     if (e.code === 'KeyR' && gameOver) {
         stopAllSounds();
         lives = 3;
@@ -978,7 +1047,6 @@ window.addEventListener('keydown', e => {
         if (!paused) {
             canPlayAudio = true;
             canvas.focus();
-            console.log('Game resumed, audio enabled, canvas focused');
         }
         if (paused && !isSoundEnabled) stopAllSounds();
     }
@@ -993,7 +1061,6 @@ function resizeCanvas() {
     canvas.height = window.innerHeight * 0.8;
     createBarriers();
     resetPlayer();
-    console.log('Canvas resized:', canvas.width, canvas.height);
 }
 
 window.addEventListener('resize', resizeCanvas);
@@ -1006,13 +1073,13 @@ gameLoop.isRunning = true;
 requestAnimationFrame(gameLoop);
 
 function checkImageLoading(img, name) {
-    img.onload = () => console.log(`${name} загружен успешно`);
-    img.onerror = () => console.error(`Ошибка загрузки ${name}. Путь: ${img.src}`);
+    img.onload = () => {};
+    img.onerror = () => {};
 }
 
-checkImageLoading(playerImg, 'Корабль игрока');
-checkImageLoading(bulletImg, 'Пуля');
-checkImageLoading(backgroundImg, 'Фон');
-alienSprites.forEach((img, i) => checkImageLoading(img, `Спрайт пришельца ${i+1}`));
-explosionSprites.forEach((img, i) => checkImageLoading(img, `Спрайт взрыва ${i+1}`));
-ufoSprites.forEach((img, i) => checkImageLoading(img, `Спрайт НЛО ${i+1}`));
+checkImageLoading(playerImg, 'Player ship');
+checkImageLoading(bulletImg, 'Bullet');
+checkImageLoading(backgroundImg, 'Background');
+alienSprites.forEach((img, i) => checkImageLoading(img, `Alien sprite ${i+1}`));
+explosionSprites.forEach((img, i) => checkImageLoading(img, `Explosion sprite ${i+1}`));
+ufoSprites.forEach((img, i) => checkImageLoading(img, `UFO sprite ${i+1}`));
