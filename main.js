@@ -28,7 +28,7 @@ const ALIEN_X_OFFSET = 130;
 const ALIEN_Y_OFFSET = 140;
 const ALIEN_SPEED = 0.125;
 const ALIEN_POINTS = 20;
-const UFO_HIT_POINTS = ALIEN_POINTS * 3; // 60 points per hit on UFO
+const UFO_HIT_POINTS = ALIEN_POINTS * 5; // 60 points per hit on UFO
 
 // UFO constants
 const UFO_WIDTH = 120;
@@ -994,7 +994,7 @@ window.addEventListener('click', () => {
 window.addEventListener('keydown', e => {
     if (e.code === 'ArrowLeft') player.dx = -PLAYER_SPEED;
     if (e.code === 'ArrowRight') player.dx = PLAYER_SPEED;
-    if (e.code === 'Space' && !gameOver && !paused) {
+    if (e.code === 'Space' && !gameOver && !paused && !e.repeat) {
         bullets.push({
             x: player.x + player.width / 2 - BULLET_WIDTH / 2,
             y: player.y,
